@@ -21,8 +21,14 @@ find_package(pybind11 CONFIG REQUIRED)
 
 include(cmake-defaults/CMakeLists.txt)
 
-# Find the drjit package using python.
-execute_process(COMMAND python3 -c "import drjit;print(drjit.get_cmake_dir())" OUTPUT_VARIABLE drjit_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+# Find the drjit package
+if (APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+  # When cross-compiling on MacOS, we cannot run drjit, but rather need to pass the relevant
+  # path into cmake
+  set(drjit_DIR ${DRJIT_CMAKE_DIR})
+else()
+  execute_process(COMMAND python3 -c "import drjit;print(drjit.get_cmake_dir())" OUTPUT_VARIABLE drjit_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
 message(${drjit_DIR})
 
 find_package(drjit)
