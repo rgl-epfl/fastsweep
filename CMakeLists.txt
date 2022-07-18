@@ -5,23 +5,24 @@ project(fastsweep VERSION "1.0.0")
 option(FASTWEEPING_USE_CUDA "Use high-performance CUDA kernels instead of
                              Dr.Jit's GPU mode" ON)
 
-if(SKBUILD)
-  # Scikit-Build does not add your "site-packages" to the search path
-  # automatically, so we need to add it _or_ the pybind11 specific directory here.
-  execute_process(
-    COMMAND "${PYTHON_EXECUTABLE}" -c
-            "import pybind11; print(pybind11.get_cmake_dir())"
-    OUTPUT_VARIABLE _tmp_dir
-    OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
-  list(APPEND CMAKE_PREFIX_PATH "${_tmp_dir}")
+if(NOT SKBUILD) # if not using scikit-build, locate the python interpreter using find_package
+  find_package(Python COMPONENTS Interpreter Development REQUIRED)
+  set(PYTHON_EXECUTABLE ${Python_EXECUTABLE})
 endif()
 
+# Locate pybind11
+execute_process(
+  COMMAND "${PYTHON_EXECUTABLE}" -c
+          "import pybind11; print(pybind11.get_cmake_dir())"
+  OUTPUT_VARIABLE _tmp_dir
+  OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
+list(APPEND CMAKE_PREFIX_PATH "${_tmp_dir}")
 find_package(pybind11 CONFIG REQUIRED)
 
 include(cmake-defaults/CMakeLists.txt)
 
 # Find the drjit package using python.
-execute_process(COMMAND python3 -c "import drjit;import os;print(os.path.join(os.path.dirname(drjit.__file__), 'share', 'cmake', 'drjit'))" OUTPUT_VARIABLE drjit_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND python3 -c "import drjit;print(drjit.get_cmake_dir())" OUTPUT_VARIABLE drjit_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
 message(${drjit_DIR})
 
 find_package(drjit)

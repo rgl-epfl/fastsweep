@@ -11,18 +11,16 @@ on:
       - published
 
 env:
-  CIBW_TEST_COMMAND: "python -c \"import fastsweep\""
-  CIBW_TEST_REQUIRES: pytest numpy drjit
+  CIBW_SKIP: "*-musllinux* pp* cp36-* cp37-*"
   CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-  CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
-  CIBW_SKIP: "*-win32 *_i686 pp* *-musllinux* cp38-macosx_arm64" # Skip PyPy, 32-bit builds, musl linux
   CIBW_ARCHS_WINDOWS: auto64
   CIBW_ARCHS_LINUX: auto64
-  CIBW_ARCHS_MACOS: x86_64 arm64
-  CIBW_BEFORE_BUILD_LINUX: yum install -y libatomic
-  CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=10.14
   CIBW_REPAIR_WHEEL_COMMAND_LINUX: "python .github/workflows/tag_wheel_manylinux.py {wheel} {dest_dir}"
   CIBW_REPAIR_WHEEL_COMMAND_MACOS: "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} --ignore-missing-dependencies {wheel}"
+  CIBW_TEST_COMMAND: "python -c \"import fastsweep\""
+  CIBW_TEST_REQUIRES: pytest numpy drjit
+  CIBW_TEST_SKIP: "*-macosx_arm64"
+  MACOSX_DEPLOYMENT_TARGET: 10.14
 
 jobs:
   build_sdist:
@@ -44,15 +42,21 @@ jobs:
         path: dist/*.tar.gz
 
   build_wheels:
-    name: Wheels on ${{ matrix.os }}
+    name: >
+      Build wheels on ${{ matrix.os }}
+      ${{ (matrix.os == 'macos-latest' && format('({0})', matrix.cibw-arch)) || '' }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-20.04, windows-latest]
+        include:
+          - os: macos-latest
+            cibw-arch: x86_64
+          - os: macos-latest
+            cibw-arch: arm64
+      fail-fast: false
 
     steps:
-
     - uses: actions/checkout@v3
       with:
         submodules: recursive
@@ -71,6 +75,27 @@ jobs:
     - name: Install cibuildwheel
       run: |
         python -m pip install cibuildwheel==2.6.1
+
+    - name: Local build for macOS cross-compilation
+      if: runner.os == 'macOS' && matrix.cibw-arch == 'arm64'
+      run: |
+        pip install ninja cmake
+        mkdir build
+        cmake -B build -GNinja .
+        ninja -C build
+
+    - name: Prepare cibuildwheel environment for macOS
+      if: runner.os == 'macOS'
+      run: |
+        [[ "arm64" == "${{ matrix.cibw-arch }}" ]] && \
+        echo "MI_CMAKE_TOOLCHAIN_FILE=$(pwd)/.github/workflows/macOS_arm64_toolchain.cmake" >> $GITHUB_ENV && \
+        echo "CIBW_BEFORE_BUILD_MACOS=\
+        rm -rf /tmp/drjit_wheel && mkdir -p /tmp/drjit_wheel/ && cd /tmp/drjit_wheel && \
+        pip download --platform=macosx_11_0_arm64 --only-binary=:all: drjit==0.2.0.dev3 && \
+        unzip *.whl" >> $GITHUB_ENV && \
+        echo "MI_DRJIT_CMAKE_DIR=/tmp/drjit_wheel/drjit/share/cmake/drjit" >> $GITHUB_ENV
+
+        echo "CIBW_ARCHS_MACOS=${{ matrix.cibw-arch }}" >> $GITHUB_ENV
 
     - name: Build wheels
       run: |

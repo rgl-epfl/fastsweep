@@ -18,7 +18,7 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name="fastsweep",
-    version="1.0.0",
+    version="1.0.1",
     description="Eikonal solver using parallel fast sweeping",
     author="Delio Vicini",
     author_email="delio.vicini@gmail.com",
