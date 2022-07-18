@@ -79,7 +79,7 @@ jobs:
     - name: Local build for macOS cross-compilation
       if: runner.os == 'macOS' && matrix.cibw-arch == 'arm64'
       run: |
-        pip install ninja cmake pybind11
+        pip install ninja cmake pybind11 drjit
         mkdir build
         cmake -B build -GNinja .
         ninja -C build
