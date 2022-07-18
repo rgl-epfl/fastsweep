@@ -1,0 +1,111 @@
+name: Wheels
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+     - main
+  release:
+    types:
+      - published
+
+env:
+  CIBW_TEST_COMMAND: "python -c \"import fastsweep\""
+  CIBW_TEST_REQUIRES: pytest numpy drjit
+  CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+  CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
+  CIBW_SKIP: "*-win32 *_i686 pp* *-musllinux* cp38-macosx_arm64" # Skip PyPy, 32-bit builds, musl linux
+  CIBW_ARCHS_WINDOWS: auto64
+  CIBW_ARCHS_LINUX: auto64
+  CIBW_ARCHS_MACOS: x86_64 arm64
+  CIBW_BEFORE_BUILD_LINUX: yum install -y libatomic
+  CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=10.14
+  CIBW_REPAIR_WHEEL_COMMAND_LINUX: "python .github/workflows/tag_wheel_manylinux.py {wheel} {dest_dir}"
+  CIBW_REPAIR_WHEEL_COMMAND_MACOS: "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} --ignore-missing-dependencies {wheel}"
+
+jobs:
+  build_sdist:
+    name: Build SDist
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+        token: ${{ secrets.FASTSWEEP_GITHUB_TOKEN }}
+
+    - name: Build SDist
+      run: pipx run build --sdist
+
+    - name: Check metadata
+      run: pipx run twine check dist/*
+
+    - uses: actions/upload-artifact@v2
+      with:
+        path: dist/*.tar.gz
+
+  build_wheels:
+    name: Wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+        token: ${{ secrets.FASTSWEEP_GITHUB_TOKEN }}
+
+    - uses: actions/setup-python@v4
+      name: Install Python
+      with:
+        python-version: '3.8'
+
+    - name: Prepare compiler environment for Windows
+      if: runner.os == 'Windows'
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Install cibuildwheel
+      run: |
+        python -m pip install cibuildwheel==2.6.1
+
+    - name: Build wheels
+      run: |
+        python -m cibuildwheel --output-dir wheelhouse
+
+    - name: Verify clean directory
+      run: git diff --exit-code
+      shell: bash
+
+    - name: Check metadata
+      run: pipx run twine check wheelhouse/*
+
+    - name: Upload wheels
+      uses: actions/upload-artifact@v2
+      with:
+        path: wheelhouse/*.whl
+
+  upload_all:
+    name: Upload if release
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    # if: github.event_name == 'release' && github.event.action == 'published'
+    if: github.event_name == 'push'
+    steps:
+    - uses: actions/setup-python@v2
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: artifact
+        path: dist
+
+    - uses: pypa/gh-action-pypi-publish@v1.5.0
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        repository_url: https://test.pypi.org/legacy/

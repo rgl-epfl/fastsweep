@@ -1,0 +1,64 @@
+# Fast sweeping SDF solver
+<p align="center">
+<img src="./redistancing.svg" width="69%" centering/>
+</p>
+
+This repository contains an efficient solver for the Eikonal equation in 3D. The primary use case for this implementation is to *redistance* a signed distance function (SDF) from its zero level set (e.g., during an optimization that optimizes the SDF). In particular, this implementation was created for the use in our paper on [differentiable signed distance function rendering](http://rgl.epfl.ch/publications/Vicini2022SDF). You can find the
+code for that paper [here](https://github.com/rgl-epfl/differentiable-sdf-rendering.git).
+
+This library does **not** convert meshes to SDFs, even though it can be used for such applications. This implementation runs efficiently on GPUs (using CUDA) and also provides a CPU implementation. The solver is exposed via Python bindings and uses [Dr.Jit](https://github.com/mitsuba-renderer/drjit) for some of its implementation.
+
+The code implements the parallel fast sweeping algorithm for the Eikonal equation:
+
+*A parallel fast sweeping method for the Eikonal equation. Miles Detrixhe,  Frédéric Gibou, Chohong Min, Journal of Computational Physics 237 (2013)*
+
+The implementation is in part based on [PDFS](https://github.com/GEM3D/PDFS), see also `LICENSE` for license details.
+
+# Installation
+Pre-build binaries are provided on PyPi and can be installed using
+```
+pip install fastsweep
+```
+
+Alternatively, the package is also relatively easy to build and install from source. The build setup uses CMake and [scikit build](https://scikit-build.readthedocs.io/en/latest/). Please clone the repository including submodules using
+```
+git clone --recursive git@github.com:rgl-epfl/fastsweep.git
+```
+The Python module can then be built and installed by invoking:
+```
+pip install ./fastsweep
+```
+
+
+# Usage
+The solver takes a Dr.Jit 3D `TensorXf` as input and solves the Eikonal equation from its zero level set. It returns a valid SDF that reproduces the zero level set of the input. The solver does not support 1D or 2D problems, for these one can for example use [scikit-fmm](https://pythonhosted.org/scikit-fmm/).
+
+Given an initial 3D tensor, the solver can be invoked as
+```
+import fastsweep
+
+data = drjit.cuda.TensorXf(...)
+sdf = fastsweep.redistance(data)
+```
+The resulting array `sdf` is then a valid SDF. The solver returns either a `drjit.cuda.TensorXf` or `dfjit.llvm.TensorXf`, depending on the type of the input.
+
+# Limitations
+- The code currently assumes the SDF to be contained in the unit cube volume and hasn't been tested for non-uniform volumes or other scales.
+- The CPU version isn't very efficient, this code is primarily designed for GPU execution and the CPU version is really just a fallback.
+- The computation of the zero level set does not consider different grid interpolation modes.
+
+# Citation
+If you use this solver for an academic paper, consider citing the following paper:
+```
+@article{Vicini2022sdf,
+    title   = {Differentiable Signed Distance Function Rendering},
+    author  = {Delio Vicini and Sébastien Speierer and Wenzel Jakob},
+    year    = 2022,
+    month   = jul,
+    journal = {Transactions on Graphics (Proceedings of SIGGRAPH)},
+    volume  = 41,
+    number  = 4,
+    pages   = {125:1--125:18},
+    doi     = {10.1145/3528223.3530139}
+}
+```

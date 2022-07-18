@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools", "wheel", "scikit-build", "cmake", "ninja", "pybind11", "drjit>=0.1.0"]
+
+build-backend = "setuptools.build_meta"
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+norecursedirs = [ "ext" ]
+
+[tool.cibuildwheel.linux]
+repair-wheel-command = "python3 .github/workflows/tag_wheel_manylinux.py {wheel} {dest_dir}"
+skip = "*-win32 *_i686 pp* *-musllinux* cp38-macosx_arm64"
+
+[tool.cibuildwheel]
+test-command = "python -c \"import fastsweep\""
+test-requires =  "pytest numpy drjit"
