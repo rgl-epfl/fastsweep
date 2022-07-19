@@ -27,7 +27,7 @@ if (APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
   # path into cmake
   set(drjit_DIR ${DRJIT_CMAKE_DIR})
 else()
-  execute_process(COMMAND python3 -c "import drjit;print(drjit.get_cmake_dir())" OUTPUT_VARIABLE drjit_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c "import drjit;print(drjit.get_cmake_dir())" OUTPUT_VARIABLE drjit_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()
 message(${drjit_DIR})
 
