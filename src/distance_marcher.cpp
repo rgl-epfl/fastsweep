@@ -296,7 +296,8 @@ template <typename Float> dr::Tensor<Float> redistance(const dr::Tensor<Float> &
     using Float64           = dr::float64_array_t<Float>;
     using Int32             = dr::int32_array_t<Float>;
 
-    cuda_load_kernels();
+    if constexpr (dr::is_cuda_v<Float>)
+        cuda_load_kernels();
 
     auto [distance, frozen] = initialize_distance(init_distance);
     dr::eval(distance, frozen);
