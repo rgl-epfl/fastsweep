@@ -1,12 +1,12 @@
 # Fast sweeping SDF solver
 <p align="center">
-<img src="./redistancing.svg" width="69%" centering/>
+<img src="https://raw.githubusercontent.com/rgl-epfl/fastsweep/main/redistancing.svg" width="70%" centering/>
 </p>
 
-This repository contains an efficient solver for the Eikonal equation in 3D. The primary use case for this implementation is to *redistance* a signed distance function (SDF) from its zero level set (e.g., during an optimization that optimizes the SDF). In particular, this implementation was created for the use in our paper on [differentiable signed distance function rendering](http://rgl.epfl.ch/publications/Vicini2022SDF). You can find the
+This repository contains a Python package providing an efficient solver for the Eikonal equation in 3D. The primary use for this package is to *redistance* a signed distance function (SDF) from its zero level set (e.g., during an optimization that optimizes the SDF). In particular, this implementation was created for the use in our paper on [differentiable signed distance function rendering](http://rgl.epfl.ch/publications/Vicini2022SDF). You can find the
 code for that paper [here](https://github.com/rgl-epfl/differentiable-sdf-rendering.git).
 
-This library does **not** convert meshes to SDFs, even though it can be used for such applications. This implementation runs efficiently on GPUs (using CUDA) and also provides a CPU implementation. The solver is exposed via Python bindings and uses [Dr.Jit](https://github.com/mitsuba-renderer/drjit) for some of its implementation.
+This library does **not** convert meshes to SDFs, even though it can be used for such applications. This implementation runs efficiently on GPUs (using CUDA) and also provides a CPU implementation as a fallback. The solver is exposed via Python bindings and uses [Dr.Jit](https://github.com/mitsuba-renderer/drjit) for some of its implementation.
 
 The code implements the parallel fast sweeping algorithm for the Eikonal equation:
 
@@ -28,6 +28,9 @@ The Python module can then be built and installed by invoking:
 ```
 pip install ./fastsweep
 ```
+
+**Important**: It is important that this solver and `drjit` are compiled with exactly the same compiler and settings for binary compatibility. If you installed a pre-built `drjit` package using `pip`, you most likely will want to use the pre-built package for `fastsweep` as well. Conversely, if you want to compile one of these packages locally, you will most likely need to compile the other one locally as well. If
+there is a problem with binary compatibility, invoking the functionality of the solver will most likely throw a type-mismatch error.
 
 
 # Usage
