@@ -36,6 +36,7 @@ setup(
         f'-DDRJIT_CMAKE_DIR:STRING={fastsweep_drjit_cmake_dir}'
     ],
 
+    url="https://github.com/rgl-epfl/fastsweep",
     cmake_install_dir="src/fastsweep",
     include_package_data=True,
     python_requires=">=3.8",

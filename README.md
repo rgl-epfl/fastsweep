@@ -43,7 +43,8 @@ import fastsweep
 data = drjit.cuda.TensorXf(...)
 sdf = fastsweep.redistance(data)
 ```
-The resulting array `sdf` is then a valid SDF. The solver returns either a `drjit.cuda.TensorXf` or `dfjit.llvm.TensorXf`, depending on the type of the input.
+The resulting array `sdf` is then a valid SDF. The solver returns either a `drjit.cuda.TensorXf` or `dfjit.llvm.TensorXf`, depending on the type of the input. A complete
+example script is provided [here](https://github.com/rgl-epfl/fastsweep/blob/main/python/example.py).
 
 # Limitations
 - The code currently assumes the SDF to be contained in the unit cube volume and hasn't been tested for non-uniform volumes or other scales.
