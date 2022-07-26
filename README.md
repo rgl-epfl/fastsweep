@@ -16,16 +16,16 @@ The implementation is in part based on [PDFS](https://github.com/GEM3D/PDFS), se
 
 # Installation
 Pre-build binaries are provided on PyPi and can be installed using
-```
+```bash
 pip install fastsweep
 ```
 
 Alternatively, the package is also relatively easy to build and install from source. The build setup uses CMake and [scikit build](https://scikit-build.readthedocs.io/en/latest/). Please clone the repository including submodules using
-```
+```bash
 git clone --recursive git@github.com:rgl-epfl/fastsweep.git
 ```
 The Python module can then be built and installed by invoking:
-```
+```bash
 pip install ./fastsweep
 ```
 
@@ -37,7 +37,7 @@ there is a problem with binary compatibility, invoking the functionality of the 
 The solver takes a Dr.Jit 3D `TensorXf` as input and solves the Eikonal equation from its zero level set. It returns a valid SDF that reproduces the zero level set of the input. The solver does not support 1D or 2D problems, for these one can for example use [scikit-fmm](https://pythonhosted.org/scikit-fmm/).
 
 Given an initial 3D tensor, the solver can be invoked as
-```
+```Python
 import fastsweep
 
 data = drjit.cuda.TensorXf(...)
@@ -53,7 +53,7 @@ example script is provided [here](https://github.com/rgl-epfl/fastsweep/blob/mai
 
 # Citation
 If you use this solver for an academic paper, consider citing the following paper:
-```
+```bibtex
 @article{Vicini2022sdf,
     title   = {Differentiable Signed Distance Function Rendering},
     author  = {Delio Vicini and Sébastien Speierer and Wenzel Jakob},
