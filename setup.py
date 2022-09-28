@@ -21,7 +21,7 @@ fastsweep_drjit_cmake_dir = os.environ.get("FASTSWEEP_DRJIT_CMAKE_DIR", "")
 
 setup(
     name="fastsweep",
-    version="0.1.0",
+    version="0.1.1",
     description="Eikonal solver using parallel fast sweeping",
     author="Delio Vicini",
     author_email="delio.vicini@gmail.com",

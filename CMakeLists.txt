@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15...3.19)
 
-project(fastsweep VERSION "1.0.0")
+project(fastsweep DESCRIPTION "Fast sweep solver")
 
 option(FASTWEEPING_USE_CUDA "Use high-performance CUDA kernels instead of
                              Dr.Jit's GPU mode" ON)
