@@ -46,6 +46,6 @@ pybind11_add_module(_fastsweep_core MODULE src/main.cpp src/distance_marcher.cpp
 target_link_libraries(_fastsweep_core PUBLIC nanothread drjit-core)
 target_compile_features(_fastsweep_core PRIVATE cxx_std_17)
 target_include_directories(_fastsweep_core PUBLIC ext/drjit/include)
-target_compile_definitions(_fastsweep_core PRIVATE VERSION_INFO=${PROJECT_VERSION})
+target_compile_definitions(_fastsweep_core PRIVATE VERSION_INFO=${PROJECT_VERSION_INFO})
 
 install(TARGETS _fastsweep_core DESTINATION .)

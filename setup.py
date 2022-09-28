@@ -19,9 +19,11 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 fastsweep_cmake_toolchain_file = os.environ.get("FASTSWEEP_CMAKE_TOOLCHAIN_FILE", "")
 fastsweep_drjit_cmake_dir = os.environ.get("FASTSWEEP_DRJIT_CMAKE_DIR", "")
 
+VERSION = "0.1.1"
+
 setup(
     name="fastsweep",
-    version="0.1.1",
+    version=VERSION,
     description="Eikonal solver using parallel fast sweeping",
     author="Delio Vicini",
     author_email="delio.vicini@gmail.com",
@@ -33,9 +35,9 @@ setup(
     package_dir={"": "src"},
     cmake_args=[
         f'-DCMAKE_TOOLCHAIN_FILE={fastsweep_cmake_toolchain_file}',
-        f'-DDRJIT_CMAKE_DIR:STRING={fastsweep_drjit_cmake_dir}'
+        f'-DDRJIT_CMAKE_DIR:STRING={fastsweep_drjit_cmake_dir}',
+        f'-DPROJECT_VERSION_INFO={VERSION}'
     ],
-
     url="https://github.com/rgl-epfl/fastsweep",
     cmake_install_dir="src/fastsweep",
     include_package_data=True,
