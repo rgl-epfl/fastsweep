@@ -25,7 +25,7 @@ std::pair<Vec3i, Vec3i> get_launch_parameters(int x_res, int y_res) {
     return {grid_size, block_size};
 }
 
-template <typename T> std::tuple<T, T, T> meshgrid(const T &x, const T &y, const T &z) {
+template <typename T> std::tuple<T, T, T> meshgrid_fastsweep(const T &x, const T &y, const T &z) {
     uint32_t sizes[3] = { (uint32_t) x.size(), (uint32_t) y.size(), (uint32_t) z.size() };
     dr::Array<T, 3> args(x, y, z);
     uint32_t size               = sizes[0] * sizes[1] * sizes[2];
@@ -62,7 +62,7 @@ initialize_distance(const dr::Tensor<Float> &init_distance) {
         init_distance.shape()[0], init_distance.shape()[1], init_distance.shape()[2]);
     ScalarVector3i shape = shape_in + 2 * BORDER_SIZE;
 
-    auto [z, y, x] = meshgrid(
+    auto [z, y, x] = meshgrid_fastsweep(
         dr::arange<Int32>(shape[0]), dr::arange<Int32>(shape[1]), dr::arange<Int32>(shape[2]));
     Vector3i coord(x, y, z);
 
