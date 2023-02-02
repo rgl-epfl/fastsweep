@@ -254,7 +254,7 @@ void fast_sweep(dr::Tensor<Float64> &distance, const dr::Tensor<Int32> &frozen, 
                 if constexpr (use_drjit) {
                     Int32 level_opaque = dr::opaque<Int32>(level);
                     // This seems to be slower
-                    // auto [x, y]        = dr::meshgrid(dr::arange<Int32>(xr), dr::arange<Int32>(yr));
+                    // auto [x, y]        = dr::meshgrid_fastsweep(dr::arange<Int32>(xr), dr::arange<Int32>(yr));
                     Int32 indices   = dr::arange<Int32>(xr * yr);
                     Int32 xr_opaque = dr::opaque<Int32>(xr);
                     Int32 x         = indices / xr_opaque;
@@ -304,7 +304,7 @@ template <typename Float> dr::Tensor<Float> redistance(const dr::Tensor<Float> &
     fast_sweep<Float>(distance, frozen);
 
     // Remove border passing and multiply by sign of the input
-    auto [z, y, x] = meshgrid(dr::arange<Int32>(init_distance.shape()[0]) + BORDER_SIZE,
+    auto [z, y, x] = meshgrid_fastsweep(dr::arange<Int32>(init_distance.shape()[0]) + BORDER_SIZE,
                               dr::arange<Int32>(init_distance.shape()[1]) + BORDER_SIZE,
                               dr::arange<Int32>(init_distance.shape()[2]) + BORDER_SIZE);
     Float result   = dr::gather<Float64>(
