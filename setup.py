@@ -19,7 +19,7 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 fastsweep_cmake_toolchain_file = os.environ.get("FASTSWEEP_CMAKE_TOOLCHAIN_FILE", "")
 fastsweep_drjit_cmake_dir = os.environ.get("FASTSWEEP_DRJIT_CMAKE_DIR", "")
 
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 setup(
     name="fastsweep",
