@@ -36,7 +36,7 @@ find_package(Python 3.8
 # Import nanobind through CMake's find_package mechanism
 find_package(nanobind CONFIG REQUIRED)
 
-include(cmake-defaults/CMakeLists.txt)
+include(ext/cmake-defaults/CMakeLists.txt)
 
 # Find the drjit package
 if (APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
