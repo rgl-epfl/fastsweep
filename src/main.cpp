@@ -1,23 +1,27 @@
 #include <cstdint>
+#include <iostream>
 
-#include <pybind11/pybind11.h>
+#include <nanobind/nanobind.h>
+#include <drjit/jit.h>
+#include <drjit/tensor.h>
 
 #include "distance_marcher.h"
 
-#include <drjit/jit.h>
-#include <drjit/tensor.h>
+namespace nb = nanobind;
+using namespace nb::literals;
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
 
-namespace py = pybind11;
+NB_MODULE(_fastsweep_core, m) {
+    // Ensure Dr.Jit was initialized by importing it.
+    nb::module_::import_("drjit");
+    m.def("redistance", &redistance<dr::CUDAArray<float>>, "init_distance"_a);
+    m.def("redistance", &redistance<dr::LLVMArray<float>>, "init_distance"_a);
 
-PYBIND11_MODULE(_fastsweep_core, m) {
-
-    // Import DrJit python modules to initialize the JIT
-    py::module drjit = py::module::import("drjit");
-    m.def("redistance", &redistance<dr::CUDAArray<float>>);
-    m.def("redistance", &redistance<dr::LLVMArray<float>>);
+    m.def("tensor_test", [](dr::Tensor<dr::LLVMArray<float>> a) {
+        // std::cout << a << std::endl;
+    });
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
