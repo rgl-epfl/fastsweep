@@ -60,7 +60,7 @@ include_directories(${drjit_INCLUDE_DIR})
 
 nanobind_add_module(_fastsweep_core STABLE_ABI NB_STATIC src/main.cpp src/distance_marcher.cpp)
 
-target_link_libraries(_fastsweep_core PUBLIC nanothread drjit-core)
+target_link_libraries(_fastsweep_core PUBLIC drjit-core)
 target_compile_features(_fastsweep_core PRIVATE cxx_std_17)
 target_include_directories(_fastsweep_core PUBLIC ext/drjit/include)
 target_compile_definitions(_fastsweep_core PRIVATE VERSION_INFO=${PROJECT_VERSION_INFO})
