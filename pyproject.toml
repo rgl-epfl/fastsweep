@@ -4,17 +4,22 @@ requires = ["scikit-build-core",
             "drjit==1.0.1"]
 build-backend = "scikit_build_core.build"
 
+
 [project]
 name = "fastsweep"
 version = "0.2.0"
 description = "Eikonal solver using parallel fast sweeping."
 readme = "README.md"
-requires-python = ">=3.8"
-authors = [{ name = "Delio Vicini", email = "delio.vicini@gmail.com" }]
-classifiers = ["License :: OSI Approved :: BSD License"]
 dependencies = [
   "typing_extensions>=4.12;python_version<\"3.11\"",
   "drjit==1.0.1",
+]
+requires-python = ">=3.8"
+authors = [
+    { name = "Delio Vicini", email = "delio.vicini@gmail.com" }
+]
+classifiers = [
+    "License :: OSI Approved :: BSD License"
 ]
 
 [project.urls]

@@ -33,36 +33,30 @@ find_package(Python 3.8
   REQUIRED COMPONENTS Interpreter Development.Module
   OPTIONAL_COMPONENTS Development.SABIModule)
 
-# Import nanobind through CMake's find_package mechanism
 find_package(nanobind CONFIG REQUIRED)
 
 include(ext/cmake-defaults/CMakeLists.txt)
 
 # Find the drjit package
-if (APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
-  # When cross-compiling on MacOS, we cannot run drjit, but rather need to pass the relevant
-  # path into cmake
-  set(drjit_DIR ${DRJIT_CMAKE_DIR})
-else()
-  execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c "import drjit;print(drjit.get_cmake_dir())" OUTPUT_VARIABLE drjit_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+if("${FASTSWEEP_DRJIT_CMAKE_DIR}" STREQUAL "")
+  execute_process(
+    COMMAND
+    "${PYTHON_EXECUTABLE}" -c
+    "import drjit; print(drjit.get_cmake_dir())"
+    OUTPUT_VARIABLE FASTSWEEP_DRJIT_CMAKE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
 endif()
-
-find_package(drjit)
-if (NOT ${drjit_FOUND})
-  message(FATAL_ERROR "Dr.Jit not found. Please install Dr.Jit using \"pip install drjit\"")
-endif()
+list(APPEND CMAKE_PREFIX_PATH "${FASTSWEEP_DRJIT_CMAKE_DIR}")
+find_package(drjit CONFIG REQUIRED)
 
 if (FASTWEEPING_USE_CUDA)
   add_definitions(-DFASTSWEEPING_USE_CUDA)
 endif()
 
-include_directories(${drjit_INCLUDE_DIR})
+nanobind_add_module(fastsweep_ext STABLE_ABI NB_STATIC src/main.cpp src/distance_marcher.cpp)
 
-nanobind_add_module(_fastsweep_core STABLE_ABI NB_STATIC src/main.cpp src/distance_marcher.cpp)
+target_link_libraries(fastsweep_ext PUBLIC drjit-core)
+target_compile_features(fastsweep_ext PRIVATE cxx_std_17)
+target_compile_definitions(fastsweep_ext PRIVATE VERSION_INFO=${PROJECT_VERSION_INFO})
 
-target_link_libraries(_fastsweep_core PUBLIC drjit-core)
-target_compile_features(_fastsweep_core PRIVATE cxx_std_17)
-target_include_directories(_fastsweep_core PUBLIC ext/drjit/include)
-target_compile_definitions(_fastsweep_core PRIVATE VERSION_INFO=${PROJECT_VERSION_INFO})
-
-install(TARGETS _fastsweep_core DESTINATION .)
+install(TARGETS fastsweep_ext DESTINATION fastsweep)

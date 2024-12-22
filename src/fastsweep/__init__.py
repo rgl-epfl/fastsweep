@@ -1,7 +1,8 @@
 import drjit as dr
 
-from _fastsweep_core import __doc__, __version__
-from _fastsweep_core import redistance as _redistance
+from .fastsweep_ext import __doc__, __version__
+from .fastsweep_ext import redistance as _redistance
 
 def redistance(data):
-    return _redistance(dr.detach(data, preserve_type=False))
+    data = dr.detach(data, preserve_type=False)
+    return _redistance(data)
