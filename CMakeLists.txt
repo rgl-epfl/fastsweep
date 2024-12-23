@@ -53,7 +53,7 @@ if (FASTWEEPING_USE_CUDA)
   add_definitions(-DFASTSWEEPING_USE_CUDA)
 endif()
 
-nanobind_add_module(fastsweep_ext NB_STATIC src/main.cpp src/distance_marcher.cpp)
+nanobind_add_module(fastsweep_ext NB_DOMAIN drjit NB_STATIC src/main.cpp src/distance_marcher.cpp)
 
 target_link_libraries(fastsweep_ext PUBLIC drjit-core)
 target_compile_features(fastsweep_ext PRIVATE cxx_std_17)
