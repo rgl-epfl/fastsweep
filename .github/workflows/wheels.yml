@@ -31,7 +31,6 @@ jobs:
         path: dist/*.tar.gz
 
   build_wheels:
-    name: Wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -42,6 +41,9 @@ jobs:
           # The first Python version to target Apple arm64 architectures is 3.9
           - os: macos-latest
             python: cp38
+    name: >
+      ${{ matrix.python }} wheel for ${{ matrix.os }}
+      ${{ (endsWith(matrix.python, '_stable') && '(stable ABI)') || '' }}
 
     steps:
     - uses: actions/checkout@v4
