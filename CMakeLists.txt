@@ -29,13 +29,13 @@ if (NOT SKBUILD)
 
 endif()
 
+include(ext/cmake-defaults/CMakeLists.txt)
+
 find_package(Python 3.8
   REQUIRED COMPONENTS Interpreter Development.Module
   OPTIONAL_COMPONENTS Development.SABIModule)
 
 find_package(nanobind CONFIG REQUIRED)
-
-include(ext/cmake-defaults/CMakeLists.txt)
 
 # Find the drjit package
 if("${FASTSWEEP_DRJIT_CMAKE_DIR}" STREQUAL "")
