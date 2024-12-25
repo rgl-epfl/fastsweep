@@ -1,124 +1,98 @@
-name: Wheels
+name: Build Python wheels
 
 on:
   workflow_dispatch:
-  pull_request:
-  push:
-    branches:
-     - main
-  release:
-    types:
-      - published
-
-env:
-  CIBW_SKIP: "*-musllinux* pp* cp36-* cp37-*"
-  CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-  CIBW_ARCHS_WINDOWS: auto64
-  CIBW_ARCHS_LINUX: auto64
-  CIBW_REPAIR_WHEEL_COMMAND_LINUX: "python .github/workflows/tag_wheel_manylinux.py {wheel} {dest_dir}"
-  CIBW_REPAIR_WHEEL_COMMAND_MACOS: "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} --ignore-missing-dependencies {wheel}"
-  CIBW_TEST_COMMAND: "python -c \"import fastsweep\""
-  CIBW_TEST_REQUIRES: pytest numpy drjit
-  CIBW_TEST_SKIP: "*-macosx_arm64"
-  MACOSX_DEPLOYMENT_TARGET: 10.14
+    inputs:
+      upload:
+        description: 'Upload wheels to PyPI? (0: no, 1: yes)'
+        required: true
+        default: '0'
 
 jobs:
-  build_sdist:
-    name: Build SDist
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-
-    - name: Build SDist
-      run: pipx run build --sdist
-
-    - name: Check metadata
-      run: pipx run twine check dist/*
-
-    - uses: actions/upload-artifact@v2
-      with:
-        path: dist/*.tar.gz
-
   build_wheels:
-    name: >
-      Build wheels on ${{ matrix.os }}
-      ${{ (matrix.os == 'macos-latest' && format('({0})', matrix.cibw-arch)) || '' }}
     runs-on: ${{ matrix.os }}
     strategy:
-      matrix:
-        os: [ubuntu-20.04, windows-latest]
-        include:
-          - os: macos-latest
-            cibw-arch: x86_64
-          - os: macos-latest
-            cibw-arch: arm64
       fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-13, macos-14, windows-latest]
+        python: [cp38, cp39, cp310, cp311, cp312, cp312_stable, cp313]
+        exclude:
+          # The first Python version to target Apple arm64 architectures is 3.9
+          - os: macos-14
+            python: cp38
+    name: >
+      ${{ matrix.python }} wheel for ${{ matrix.os }}
+      ${{ (endsWith(matrix.python, '_stable') && '(stable ABI)') || '' }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
-        submodules: recursive
+        submodules: true
 
     - uses: actions/setup-python@v4
       name: Install Python
       with:
         python-version: '3.10'
 
-    - name: Prepare compiler environment for Windows
-      if: runner.os == 'Windows'
-      uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: x64
-
     - name: Install cibuildwheel
       run: |
-        python -m pip install cibuildwheel==2.11.2
+        python -m pip install cibuildwheel==2.20.0
 
-    - name: Prepare cibuildwheel environment for macOS
-      if: runner.os == 'macOS'
+    ################################################################
+    # Set up envvars to build the correct wheel (stable ABI or not)
+    ################################################################
+    - name: Prepare cibuildwheel environment (UNIX)
+      if: ${{ ! endsWith(matrix.python, '_stable') && runner.os != 'Windows' }}
       run: |
-        [[ "arm64" == "${{ matrix.cibw-arch }}" ]] && \
-        echo "FASTSWEEP_CMAKE_TOOLCHAIN_FILE=$(pwd)/.github/workflows/macOS_arm64_toolchain.cmake" >> $GITHUB_ENV && \
-        echo "CIBW_BEFORE_BUILD_MACOS=\
-        rm -rf /tmp/drjit_wheel && mkdir -p /tmp/drjit_wheel/ && cd /tmp/drjit_wheel && \
-        pip download --platform=macosx_11_0_arm64 --only-binary=:all: drjit && \
-        unzip *.whl" >> $GITHUB_ENV && \
-        echo "FASTSWEEP_DRJIT_CMAKE_DIR=/tmp/drjit_wheel/drjit/share/cmake/drjit" >> $GITHUB_ENV
+        echo "CIBW_BUILD=${{ matrix.python }}-*" >> $GITHUB_ENV
 
-        echo "CIBW_ARCHS_MACOS=${{ matrix.cibw-arch }}" >> $GITHUB_ENV
+    - name: Prepare cibuildwheel environment (Windows)
+      if: ${{ ! endsWith(matrix.python, '_stable') && runner.os == 'Windows' }}
+      run: |
+        echo "CIBW_BUILD=${{ matrix.python }}-*" >> $env:GITHUB_ENV
 
-    - name: Build wheels
+    - name: Prepare cibuildwheel environment for stable ABI wheel (UNIX)
+      if: ${{ endsWith(matrix.python, '_stable') && runner.os != 'Windows' }}
+      run: |
+        stable_cp=$(echo ${{ matrix.python }} | cut -d_ -f1) &&
+        echo "CIBW_BUILD=${stable_cp}-*" >> $GITHUB_ENV &&
+        echo "CIBW_CONFIG_SETTINGS=\"wheel.py-api=cp312\" \"cmake.args=-DFASTSWEEP_STABLE_ABI=ON\"" >> $GITHUB_ENV
+
+    - name: Prepare cibuildwheel environment for stable ABI wheel (Windows)
+      if: ${{ endsWith(matrix.python, '_stable') && runner.os == 'Windows' }}
+      run: |
+        $stable_cp = '${{ matrix.python }}' -split '_'
+        echo "CIBW_BUILD=$($stable_cp[0])-*" >> $env:GITHUB_ENV
+        echo "CIBW_CONFIG_SETTINGS=wheel.py-api=cp312 cmake.args=-DFASTSWEEP_STABLE_ABI=ON" >> $env:GITHUB_ENV
+
+    #########################
+    # Build and store wheels
+    #########################
+    - name: Build wheel
       run: |
         python -m cibuildwheel --output-dir wheelhouse
 
-    - name: Verify clean directory
-      run: git diff --exit-code
-      shell: bash
-
-    - name: Check metadata
-      run: pipx run twine check wheelhouse/*
-
-    - name: Upload wheels
-      uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
-        path: wheelhouse/*.whl
+        name: wheels
+        path: ./wheelhouse/*.whl
 
-  upload_all:
-    name: Upload if release
-    needs: [build_wheels, build_sdist]
+  upload_pypi:
+    name: Upload wheels to PyPI
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' && github.event.action == 'published'
+    if: ${{ github.event.inputs.upload == '1'}}
+    needs: [build_wheels]
+
     steps:
-    - uses: actions/setup-python@v2
+      #########################
+      # Fetch and upload wheels
+      #########################
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+          path: dist
 
-    - uses: actions/download-artifact@v2
-      with:
-        name: artifact
-        path: dist
-
-    - uses: pypa/gh-action-pypi-publish@v1.5.0
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
+      - uses: pypa/gh-action-pypi-publish@v1.10.2
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}

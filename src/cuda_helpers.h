@@ -1,3 +1,5 @@
+#include <cstdio>
+
 #include "../kernels/cuda_kernels.h"
 
 // This file looks up various cuda driver calls

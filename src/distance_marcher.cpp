@@ -95,8 +95,8 @@ initialize_distance(const dr::Tensor<Float> &init_distance) {
     }
 
     // If we actually are on  the transition zone
-    Float64 dsum     = dr::sum(dr::select(ldistance > 0, 1 / dr::sqr(ldistance), 0));
-    Bool zero_init   = active & dr::eq(init_phi_v, 0.0);
+    Float64 dsum     = dr::sum(dr::select(ldistance > 0, 1 / dr::square(ldistance), 0));
+    Bool zero_init   = active & (init_phi_v == 0.0);
     Float64 distance = dr::select(zero_init | ~borders, 0.0, dr::sqrt(1 / dsum));
     Int32 frozen     = dr::select(borders | zero_init, 1, 0);
 
@@ -131,12 +131,12 @@ Float solve_eikonal(const Float &cur_dist, Vector3f &m, const ScalarVector3f &dx
     }
 
     // Solve the eikonal equation locally to update distance
-    auto m2_0      = dr::sqr(m[0]);
-    auto m2_1      = dr::sqr(m[1]);
-    auto m2_2      = dr::sqr(m[2]);
-    auto d2_0      = dr::sqr(d[0]);
-    auto d2_1      = dr::sqr(d[1]);
-    auto d2_2      = dr::sqr(d[2]);
+    auto m2_0      = dr::square(m[0]);
+    auto m2_1      = dr::square(m[1]);
+    auto m2_2      = dr::square(m[2]);
+    auto d2_0      = dr::square(d[0]);
+    auto d2_1      = dr::square(d[1]);
+    auto d2_2      = dr::square(d[2]);
     Float dist_new = m[0] + d[0];
     Float s        = dr::sqrt(-m2_0 + 2 * m[0] * m[1] - m2_1 + d2_0 + d2_1);
 
@@ -176,7 +176,7 @@ void sweep_step(const Int32 &x, const Int32 &y,
 
     Int32 linear_idx = i * shape.y() * shape.x() + j * shape.x() + k;
     Int32 frozen_v   = dr::gather<Int32>(frozen.array(), linear_idx, active);
-    active &= dr::neq(frozen_v, 1);
+    active &= frozen_v != 1;
 
     auto &dist_data = distance.array();
     Float64 center  = dr::gather<Float64>(dist_data, linear_idx, active);
@@ -309,7 +309,7 @@ template <typename Float> dr::Tensor<Float> redistance(const dr::Tensor<Float> &
                                 dr::arange<Int32>(init_distance.shape()[2]) + BORDER_SIZE);
     Float result   = dr::gather<Float64>(
         distance.array(),
-        z * distance.shape()[0] * distance.shape()[1] + y * distance.shape()[0] + x);
+        Int32(z * distance.shape()[0] * distance.shape()[1] + y * distance.shape()[0] + x));
     return dr::Tensor<Float>(result * dr::sign(init_distance), 3, init_distance.shape().data());
 }
 
