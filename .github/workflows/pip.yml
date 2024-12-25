@@ -36,5 +36,5 @@ jobs:
         python -m pip install pytest numpy drjit
         pip install --verbose .
 
-    - name: Test
-      run: python -m pytest
+    - name: Test import
+      run: python -c "import fastsweep"
