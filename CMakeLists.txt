@@ -57,6 +57,6 @@ nanobind_add_module(fastsweep_ext NB_DOMAIN drjit NB_STATIC src/main.cpp src/dis
 
 target_link_libraries(fastsweep_ext PUBLIC drjit-core)
 target_compile_features(fastsweep_ext PRIVATE cxx_std_17)
-target_compile_definitions(fastsweep_ext PRIVATE VERSION_INFO=${PROJECT_VERSION_INFO})
+target_compile_definitions(fastsweep_ext PRIVATE VERSION_INFO=${SKBUILD_PROJECT_VERSION})
 
 install(TARGETS fastsweep_ext DESTINATION fastsweep)
