@@ -13,11 +13,13 @@ using namespace nb::literals;
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
 
+static const char *docstring = "Re-distances the input distance field by solving the Eikonal equation";
+
 NB_MODULE(fastsweep_ext, m) {
     // Ensure Dr.Jit was initialized by importing it.
     nb::module_::import_("drjit");
-    m.def("redistance", &redistance<dr::CUDAArray<float>>, "init_distance"_a);
-    m.def("redistance", &redistance<dr::LLVMArray<float>>, "init_distance"_a);
+    m.def("redistance", &redistance<dr::CUDAArray<float>>, "distance_field"_a, docstring);
+    m.def("redistance", &redistance<dr::LLVMArray<float>>, "distance_field"_a, docstring);
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
