@@ -37,8 +37,9 @@ jobs:
     - name: Check metadata
       run: pipx run twine check dist/*
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
+        name: dist-sdist
         path: dist/*.tar.gz
 
   build_wheels:
@@ -101,9 +102,10 @@ jobs:
       run: pipx run twine check wheelhouse/*
 
     - name: Upload wheels
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         path: wheelhouse/*.whl
+        name: dist-${{ matrix.os }}
 
   upload_all:
     name: Upload if release
