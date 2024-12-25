@@ -12,6 +12,7 @@ on:
 
 env:
   CIBW_ARCHS_MACOS: x86_64 arm64
+  CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=10.14
 
 jobs:
   build_sdist:
