@@ -11,7 +11,7 @@ on:
       - published
 
 env:
-  CIBW_ARCHS_MACOS: "x86_64 arm64"
+  CIBW_ARCHS_MACOS: x86_64 arm64
 
 jobs:
   build_sdist:
