@@ -41,7 +41,7 @@ logging.level = "INFO"
 build-verbosity = 1
 build = ["cp38-*", "cp39-*", "cp310-*", "cp311-*", "cp312-*", "cp313-*"]
 archs = ["auto64"]
-skip = "*-musllinux* pp* cp38-macosx_arm64"
+skip = "*-musllinux* pp* cp38-macosx_*"
 
 # Try to import the package to see if it was built correctly.
 test-command = "python -c \"import fastsweep\""
