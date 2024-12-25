@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-13, macos-14, windows-latest]
-        python: [cp38, cp39, cp310, cp311, cp312, cp313]
+        python: [cp38, cp39, cp310, cp311, cp312, cp312_stable, cp313]
         exclude:
           # The first Python version to target Apple arm64 architectures is 3.9
           - os: macos-14
@@ -56,14 +56,14 @@ jobs:
       run: |
         stable_cp=$(echo ${{ matrix.python }} | cut -d_ -f1) &&
         echo "CIBW_BUILD=${stable_cp}-*" >> $GITHUB_ENV &&
-        echo "CIBW_CONFIG_SETTINGS=\"wheel.py-api=cp312\" \"cmake.args=-DDRJIT_STABLE_ABI=ON\"" >> $GITHUB_ENV
+        echo "CIBW_CONFIG_SETTINGS=\"wheel.py-api=cp312\" \"cmake.args=-DFASTSWEEP_STABLE_ABI=ON\"" >> $GITHUB_ENV
 
     - name: Prepare cibuildwheel environment for stable ABI wheel (Windows)
       if: ${{ endsWith(matrix.python, '_stable') && runner.os == 'Windows' }}
       run: |
         $stable_cp = '${{ matrix.python }}' -split '_'
         echo "CIBW_BUILD=$($stable_cp[0])-*" >> $env:GITHUB_ENV
-        echo "CIBW_CONFIG_SETTINGS=wheel.py-api=cp312 cmake.args=-DDRJIT_STABLE_ABI=ON" >> $env:GITHUB_ENV
+        echo "CIBW_CONFIG_SETTINGS=wheel.py-api=cp312 cmake.args=-DFASTSWEEP_STABLE_ABI=ON" >> $env:GITHUB_ENV
 
     #########################
     # Build and store wheels

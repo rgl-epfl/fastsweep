@@ -2,8 +2,11 @@ cmake_minimum_required(VERSION 3.15...3.19)
 
 project(fastsweep DESCRIPTION "Fast sweep solver")
 
-option(FASTWEEPING_USE_CUDA "Use high-performance CUDA kernels instead of
-                             Dr.Jit's GPU mode" ON)
+option(FASTSWEEP_USE_CUDA "Use high-performance CUDA kernels instead of
+                            Dr.Jit's GPU mode" ON)
+option(FASTSWEEP_STABLE_ABI "Build Python extension using the CPython stable ABI?
+                             (Only relevant when using scikit-build)" OFF)
+mark_as_advanced(FASTSWEEP_STABLE_ABI)
 
 if (NOT SKBUILD)
   message(WARNING "\
@@ -49,11 +52,27 @@ endif()
 list(APPEND CMAKE_PREFIX_PATH "${FASTSWEEP_DRJIT_CMAKE_DIR}")
 find_package(drjit CONFIG REQUIRED)
 
-if (FASTWEEPING_USE_CUDA)
+if (FASTSWEEP_USE_CUDA)
   add_definitions(-DFASTSWEEPING_USE_CUDA)
 endif()
 
-nanobind_add_module(fastsweep_ext NB_DOMAIN drjit NB_STATIC src/main.cpp src/distance_marcher.cpp)
+if (SKBUILD)
+  # Enable LTO only for release builds targeting PyPI (~5% binary size reduction)
+  set(FASTSWEEP_DIST_FLAGS LTO)
+  if (FASTSWEEP_STABLE_ABI)
+    list(APPEND FASTSWEEP_DIST_FLAGS STABLE_ABI)
+  endif()
+endif()
+
+nanobind_add_module(
+  fastsweep_ext
+  NB_DOMAIN
+  drjit
+  NB_STATIC
+  ${FASTSWEEP_DIST_FLAGS}
+  src/main.cpp
+  src/distance_marcher.cpp
+)
 
 target_link_libraries(fastsweep_ext PUBLIC drjit-core)
 target_compile_features(fastsweep_ext PRIVATE cxx_std_17)
