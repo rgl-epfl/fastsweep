@@ -4,6 +4,9 @@ _skbuild/
 .vscode/
 wheelhouse/
 
+example.png
+python_only_example.png
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

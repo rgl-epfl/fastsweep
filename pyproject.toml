@@ -1,18 +1,18 @@
 [build-system]
-requires = ["scikit-build-core >=0.4.3",
-            "nanobind == 2.2.0",
-            "drjit==1.0.1"]
+requires = ["scikit-build-core",
+            "nanobind == 2.9.2",
+            "drjit==1.2.0"]
 build-backend = "scikit_build_core.build"
 
 
 [project]
 name = "fastsweep"
-version = "0.2.0"
+version = "0.2.1"
 description = "Eikonal solver using parallel fast sweeping."
 readme = "README.md"
 dependencies = [
   "typing_extensions>=4.12;python_version<\"3.11\"",
-  "drjit==1.0.1",
+  "drjit==1.2.0",
 ]
 requires-python = ">=3.8"
 authors = [
@@ -39,14 +39,14 @@ logging.level = "INFO"
 [tool.cibuildwheel]
 # Necessary to see build output from the actual compilation
 build-verbosity = 1
-build = ["cp38-*", "cp39-*", "cp310-*", "cp311-*", "cp312-*", "cp313-*"]
+build = ["cp39-*", "cp310-*", "cp311-*", "cp312-*", "cp313-*"]
 archs = ["auto64"]
 skip = "*-musllinux* pp*"
 
 # Try to import the package to see if it was built correctly.
 test-command = "python -c \"import fastsweep\""
 
-# needed for full c++17 support
+# Needed for full C++17 support
 [tool.cibuildwheel.macos.environment]
 MACOSX_DEPLOYMENT_TARGET = "10.14"
 

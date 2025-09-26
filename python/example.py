@@ -1,17 +1,10 @@
 """This script shows how the library can be used to convert a generic implicit function to an SDF"""
 
+import fastsweep
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Using CUDA will be *much* faster than running on CPU, but requires a CUDA capable GPU
-use_cuda = False
-
-if not use_cuda:
-    from drjit.llvm import TensorXf
-else:
-    from drjit.cuda import TensorXf
-
-import fastsweep
+from drjit.auto import TensorXf
 
 res = 64
 
@@ -34,3 +27,4 @@ x, y = np.meshgrid(np.arange(res), np.arange(res))
 ax[1].contour(x, y, sdf[:, res // 2, :], levels=[0], colors='red')
 ax[1].set_title("SDF")
 plt.show()
+plt.savefig("example.png", dpi=300)

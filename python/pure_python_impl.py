@@ -12,15 +12,9 @@ import drjit as dr
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Use CUDA if possible, otherwise use LLVM
-if dr.has_backend(dr.JitBackend.CUDA):
-    from drjit.cuda import Array3f64 as Vector3f
-    from drjit.cuda import Array3i as Vector3i
-    from drjit.cuda import Bool, Float, Float64, Int32, TensorXf, TensorXf64
-else:
-    from drjit.llvm import Array3f64 as Vector3f
-    from drjit.llvm import Array3i as Vector3i
-    from drjit.llvm import Bool, Float, Float64, Int32, TensorXf, TensorXf64
+from drjit.auto import Array3f64 as Vector3f
+from drjit.auto import Array3i as Vector3i
+from drjit.auto import Bool, Float, Float64, Int32, TensorXf, TensorXf64
 
 from drjit.scalar import Array3f64 as ScalarVector3f
 from drjit.scalar import Array3i as ScalarVector3i
@@ -36,15 +30,18 @@ def idx(x, y, z, shape):
 def initialize_distance(init_phi):
     # The implementation follows the code in https://github.com/scikit-fmm/scikit-fmm
     dims = 3
-    shape_in = ScalarVector3i(init_phi.shape[0], init_phi.shape[1], init_phi.shape[2])
+    shape_in = ScalarVector3i(
+        init_phi.shape[0], init_phi.shape[1], init_phi.shape[2])
     shape = shape_in + 2 * BORDER_SIZE
-    z, y, x = dr.meshgrid(*[dr.arange(Int32, shape[i]) for i in range(3)], indexing='ij')
+    z, y, x = dr.meshgrid(*[dr.arange(Int32, shape[i])
+                          for i in range(3)], indexing='ij')
     coord = Vector3i(x, y, z)
     ldistance = Vector3f(dr.inf)
 
     # Assume SDF is in [0,1]
     active = dr.all((coord >= BORDER_SIZE) & (coord < shape - BORDER_SIZE))
-    linear_idx = idx(coord[0] - BORDER_SIZE, coord[1] - BORDER_SIZE, coord[2] - BORDER_SIZE, shape_in)
+    linear_idx = idx(coord[0] - BORDER_SIZE, coord[1] -
+                     BORDER_SIZE, coord[2] - BORDER_SIZE, shape_in)
     init_phi_v = Float64(dr.gather(Float, init_phi.array, linear_idx, active))
     deltas = 1 / Vector3f(shape_in)
     borders = dr.zeros(Bool, dr.prod(shape))
@@ -52,10 +49,13 @@ def initialize_distance(init_phi):
         for j in range(-1, 2, 2):
             offset_coord = Vector3i(coord)
             offset_coord[dim] += j
-            valid = active & (offset_coord[dim] >= BORDER_SIZE) & (offset_coord[dim] < shape[dim] - BORDER_SIZE)
+            valid = active & (offset_coord[dim] >= BORDER_SIZE) & (
+                offset_coord[dim] < shape[dim] - BORDER_SIZE)
             init_phi_n = dr.gather(Float, init_phi.array, idx(offset_coord[0] - BORDER_SIZE,
-                                                              offset_coord[1] - BORDER_SIZE,
-                                                              offset_coord[2] - BORDER_SIZE,
+                                                              offset_coord[1] -
+                                                              BORDER_SIZE,
+                                                              offset_coord[2] -
+                                                              BORDER_SIZE,
                                                               shape_in), valid)
             valid &= init_phi_v * init_phi_n < 0
             borders |= valid
@@ -64,13 +64,13 @@ def initialize_distance(init_phi):
 
     # If we actually are on  the transition zone
     dsum = dr.sum(dr.select(ldistance > 0, 1 / dr.sqr(ldistance), 0))
-    zero_init = active & dr.eq(init_phi_v, 0.0)
+    zero_init = active & (init_phi_v == 0.0)
     distance = dr.select(zero_init | ~borders, 0.0, dr.sqrt(1 / dsum))
     frozen = Int32(dr.select(borders | zero_init, 1, 0))
 
     # High default value for non-frozen nodes
     distance[~(borders | zero_init)] = 90000
-    return TensorXf64(distance, shape), frozen
+    return TensorXf64(distance, tuple(shape)), frozen
 
 
 def solve_eikonal(cur_dist, m, d):
@@ -97,7 +97,8 @@ def solve_eikonal(cur_dist, m, d):
     dist_new = m[0] + d[0]
     cond1 = dist_new > m[1]
     s = dr.sqrt(-m2_0 + 2 * m[0] * m[1] - m2_1 + d2_0 + d2_1)
-    dist_new[cond1] = (m[1] * d2_0 + m[0] * d2_1 + d[0] * d[1] * s) / (d2_0 + d2_1)
+    dist_new[cond1] = (m[1] * d2_0 + m[0] * d2_1 +
+                       d[0] * d[1] * s) / (d2_0 + d2_1)
     a = dr.sqrt(-m2_0 * d2_1 - m2_0 * d2_2 + 2 * m[0] * m[1] * d2_2 - m2_1 * d2_0 - m2_1 * d2_2 + 2 * m[0] * m[2] *
                 d2_1 - m2_2 * d2_0 - m2_2 * d2_1 + 2 * m[1] * m[2] * d2_0 + d2_0 * d2_1 + d2_0 * d2_2 + d2_1 * d2_2)
     dist_new[cond1 & (dist_new > m[2])] = (m[2] * d2_0 * d2_1 + m[1] * d2_0 * d2_2 + m[0] * d2_1 *
@@ -109,13 +110,14 @@ def sweep_step(x, y, distance, frozen, shape_in, level, sweep_offset, dx):
     shape = shape_in + 2 * BORDER_SIZE
 
     z = level - x - y
-    active = (x <= shape_in.x) & (y <= shape_in.y) & (z > 0) & (z <= shape_in.z)
+    active = (x <= shape_in.x) & (
+        y <= shape_in.y) & (z > 0) & (z <= shape_in.z)
 
     i = dr.abs(z - sweep_offset.z)
     j = dr.abs(y - sweep_offset.y)
     k = dr.abs(x - sweep_offset.x)
     linear_idx = i * shape.y * shape.x + j * shape.x + k
-    active &= dr.neq(dr.gather(Int32, frozen, linear_idx, active), 1)
+    active &= dr.gather(Int32, frozen, linear_idx, active) != 1
 
     dist_data = distance.array
     center = dr.gather(Float64, dist_data, linear_idx, active)
@@ -123,10 +125,13 @@ def sweep_step(x, y, distance, frozen, shape_in, level, sweep_offset, dx):
     right = dr.gather(Float64, dist_data, linear_idx + 1, active)
     up = dr.gather(Float64, dist_data, linear_idx - shape.x, active)
     down = dr.gather(Float64, dist_data, linear_idx + shape.x, active)
-    front = dr.gather(Float64, dist_data, linear_idx - shape.y * shape.x, active)
-    back = dr.gather(Float64, dist_data, linear_idx + shape.y * shape.x, active)
+    front = dr.gather(Float64, dist_data, linear_idx -
+                      shape.y * shape.x, active)
+    back = dr.gather(Float64, dist_data, linear_idx +
+                     shape.y * shape.x, active)
 
-    min_values = [dr.minimum(left, right), dr.minimum(up, down), dr.minimum(front, back)]
+    min_values = [dr.minimum(left, right), dr.minimum(
+        up, down), dr.minimum(front, back)]
     eik = solve_eikonal(center, min_values, dx)
 
     # Update the current distance information
@@ -189,7 +194,8 @@ def redistance(phi):
     z, y, x = dr.meshgrid(dr.arange(Int32, phi.shape[0]) + BORDER_SIZE,
                           dr.arange(Int32, phi.shape[1]) + BORDER_SIZE,
                           dr.arange(Int32, phi.shape[2]) + BORDER_SIZE, indexing='ij')
-    result = dr.gather(Float64, distance.array, z * distance.shape[0] * distance.shape[1] + y * distance.shape[0] + x)
+    result = dr.gather(Float64, distance.array, z *
+                       distance.shape[0] * distance.shape[1] + y * distance.shape[0] + x)
     return TensorXf(result * dr.sign(phi.array), phi.shape)
 
 
@@ -222,6 +228,7 @@ def main():
     ax[1].set_title("Python Implementation")
     ax[1].contour(x, y, sdf_py[:, res // 2, :], levels=[0], colors='red')
     plt.show()
+    plt.savefig("python_only_example.png", dpi=300)
 
 
 main()
